@@ -1,12 +1,3 @@
-
-# ATM sistemi projesi:
-# Para Çekme, Para Yatırma, Bakiye Öğrenme ve Para Transferi yapan bir ATM programı yazıldı.
-# Sisteme giriş için ATM sisteminde olduğu gibi sadece sayılardan oluşan bir şifre ve kullanıcıya hitap etmesi için bir isim sorulur.
-# Sisteme giriş şifresi 1453 olarak belirlenmiştir. 
-# Sistem try-except blokları kullanılarak yapıldı. Çünkü olası bazı hataları engellemek hedeflendi.
-# Gerekli görülen kod bloklarında yapılan yorumlar ile programa açıklık getirilmesi amaçlanmaktadır.
-# Yorumlar kendisinden bir sonraki kod bloğu/blokları için yapılmıştır.
-
 print(
     """
 ██████████████████████████████████
@@ -21,16 +12,18 @@ Author : A.Vahap Doğan
 Merhaba işlem yapılabilmesi için sizden bir kart şifresi isteyecektir. Şifre: 1453 olacaktır ve diğer istemlere göre işlemlerinizi yapabilirsiniz.
     """
 )
-while True:
+
+retry_count = 3
+while retry_count > 0:
     try:
         sifre = int(input("Kart Şifresi : "))
         if sifre == 1453:
             break
         else:
-            print("Hatalı Şifre")
+            retry_count -= 1
+            print(f"Hatalı Şifre. Kalan deneme hakkı: {retry_count}")
     except ValueError:
         print("Şifre sadece sayılardan oluşur!")
-
 
 while True:
     try:
@@ -40,9 +33,11 @@ while True:
     except ValueError:
         print("Sadece sayı giriniz!")
 
+transaction_history = []
 
+def record_transaction(transaction_type, amount):
+    transaction_history.append(f"{transaction_type}: {amount} ₺")
 
-# Kullanıcın sisteme girişinde göreceği mesaj aşağıdaki print() ifadesi içerisine yazılmıştır.
 print(
     """
 Hoşgeldin {}. 
@@ -53,12 +48,13 @@ Hesabınızdaki para miktarı: {} ₺
 2 -- Para Yatırma
 3 -- Bakiye Öğrenme
 4 -- Para Transferi
+5 -- İşlem Geçmişi
 q -- Çıkış
 """.format(name, anapara))
 
+daily_withdrawal_limit = 1000
+withdrawn_today = 0
 
-# işlem adında bir değişken tanımlandı ve değişkene kullanıcıdan girilen değer durumuna göre işlemler yapılacaktır.
-# İşlemlerin kullanıcı tarafından bitirilmemesi halinde farklı işlemleri yapması için bütün işlem blokları while döngüsüne yazıldı.
 while True:
     işlem = input("İşlem Numarası: ")
     if işlem == "1":
@@ -69,17 +65,19 @@ while True:
                 if çekilecek_para > anapara:
                     print("Bakiye Yetersiz. Hesabınızdaki para miktarı: ", anapara)
                     print("Lütfen tekrar deneyiniz!")
-                elif çekilecek_para <= anapara:
+                elif çekilecek_para + withdrawn_today > daily_withdrawal_limit:
+                    print("Günlük para çekme limitini aştınız.")
+                else:
                     durum = True
                     while durum:
                         onay_para_çekimi_giriş = input(
                         "Hesabınızdan {} ₺ miktarında para çekilecek. Onaylıyor musunuz? '(E/H)' : )".format(çekilecek_para))
-                    
-                        # Kullanıcıya E/H sorusunda klavyeden e/h girişi sırasında hata ile karşılaşmamak için upper() metodunu kullanıldı.
                         onay_para_çekimi = onay_para_çekimi_giriş.upper()
                         if onay_para_çekimi == "E":
-                            anapara -=çekilecek_para
-                            print("Hesabınızdan {} miktar para çekildi. Kalan anaparanız: {}".format(çekilecek_para, anapara))
+                            anapara -= çekilecek_para
+                            withdrawn_today += çekilecek_para
+                            record_transaction("Para Çekme", çekilecek_para)
+                            print("Hesabınızdan {} ₺ miktar para çekildi. Kalan anaparanız: {}".format(çekilecek_para, anapara))
                             durum = False
                             break
                         elif onay_para_çekimi == "H":
@@ -90,19 +88,17 @@ while True:
                             print("Geçersiz İşlem!")
                             durum = True
                     break
-            # Kullanıcının sayı dışında başka karakter girmesi halinde olası hataları engellemek için hata mesajı verildi.
             except ValueError:
                 print("Lütfen sadece sayı giriniz!")
 
-                
     elif işlem == "2":
         while True:
             print("\n \n----- Para Yatırma İşlemi ----- \n")
             try:
                 yatırılacak_para = int(input("Yatırılacak para miktarı: "))
                 anapara += yatırılacak_para
-                print(
-                    "Hesabınıza {} ₺ para yatırıldı. Güncel anaparanız: {}".format(yatırılacak_para, anapara))
+                record_transaction("Para Yatırma", yatırılacak_para)
+                print("Hesabınıza {} ₺ para yatırıldı. Güncel anaparanız: {}".format(yatırılacak_para, anapara))
                 break
             except ValueError:
                 print("Sadece sayı giriniz!")
@@ -110,12 +106,11 @@ while True:
     elif işlem == "3":
         kötü = " bilmenizi isteriz."
         iyi = " söylemekten sevinç duyarız."
-        if anapara<500:
+        if anapara < 500:
             print(
             """
             \n \n----- Bakiye Öğrenme ----- \n
             Merhaba {}. Umarım güzel bir geçiriyorsunuzdur :)
-            Hesabınızda daha fazla para olmasını diler ve 
             Hesabınızdaki para miktarının {} ₺ olduğunu {}
             """.format(name, anapara, kötü))
         else:
@@ -123,41 +118,27 @@ while True:
             """
             \n \n----- Bakiye Öğrenme ----- \n
             Merhaba {}. Umarım güzel bir geçiriyorsunuzdur :)
-            Hesabınızda daha fazla para olmasını diler ve 
             Hesabınızdaki para miktarının {} ₺ olduğunu {}
             """.format(name, anapara, iyi))
-            
-        
 
     elif işlem == "4":
         while True:
             print("\n \n----- Para Transferi ----- \n")
             try:
                 transfer_no = int(input("Transfer edilecek IBAN Numarasını Yazınız: TR"))
-                
-                # int türündeki bir IBAN numarasının basamak sayısını öğrenmek için str türüne çevirip 
-                # len() fonksiyonu kullanıldı.
-                if len(str((transfer_no))) == 24:
+                if len(str(transfer_no)) == 24:
                     transfer_para = int(input("Gönderilecek Para Miktarı: "))
-                    
-                    # Anaparanın transfer edilecek paraya eşit veya daha fazla olmasını sağlayan kod bloğu. 
-                    # Kullanıcıdan onay (E/H) istenir. Onay dışında başka bir ifade girildiğinde onay tekrar istenir.abs
                     durum1 = True
                     while durum1:
                         if anapara >= transfer_para:
                             transfer_onay_giriş = input(
                                 "Hesabınızdan {} IBAN numarasına {} ₺ para transferi yapılacak. Onaylıyor musunuz? (E/H): ".format(
                                     transfer_no, transfer_para))
-                            
-                            # Kullanıcının gireceği E/H değerinin e/h olası durumda bir hata vermemesi için upper() metodu kullanıldı.    
                             transfer_onay = transfer_onay_giriş.upper()
-                            
                             if transfer_onay == "E":
-                                
-                            # Gönderilen para anapara miktarından azaldı.
                                 anapara -= transfer_para
-                                print(
-                                    "İşleminiz başarıyla gerçekleştirildi. İşlem sonu bakiyeniz: {} ₺".format(anapara))
+                                record_transaction("Para Transferi", transfer_para)
+                                print("İşleminiz başarıyla gerçekleştirildi. İşlem sonu bakiyeniz: {} ₺".format(anapara))
                                 durum1 = False
                                 break
                             elif transfer_onay == "H":
@@ -167,20 +148,22 @@ while True:
                             else:
                                 print("Geçersiz İşlem!")
                                 durum1 = True
-                            break
-                    # Anaparanın transfer edilecek paradan az olması durumunda Bakiyenin yetersiz olduğunu gösteren ifade.
                     else:
                         print("Bakiyeniz Yetersiz!")
-                        
-                #IBAN no'nun eksik olduğu durumda verilecek uyarı.
                 else:
                     print("IBAN no 24 basamaklı olmalıdır!")
-                    
             except ValueError:
-                print("sadece sayı giriniz!")
+                print("Sadece sayı giriniz!")
 
-    elif işlem == "q" and "Q":
-        print("n \nişlem Sonlandı.")
-        break
+    elif işlem == "5":
+        print("Geçmiş İşlemler:")
+        for transaction in transaction_history:
+            print(transaction)
+
+    elif işlem.lower() == "q":
+        exit_confirmation = input("Çıkmak istediğinize emin misiniz? (E/H): ").upper()
+        if exit_confirmation == "E":
+            print("İşlem Sonlandı.")
+            break
     else:
         print("Geçersiz İşlem!")
