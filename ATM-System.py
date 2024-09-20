@@ -9,11 +9,13 @@ print(
 ██████████████████████████████████
 Author : A.Vahap Doğan
 
-Merhaba işlem yapılabilmesi için sizden bir kart şifresi isteyecektir. Şifre: 1453 olacaktır ve diğer istemlere göre işlemlerinizi yapabilirsiniz.
-    """
+   """
 )
 
 retry_count = 3
+
+print("Giriş yapmak için kart parolanı gir.")
+#Parola = 1453
 while retry_count > 0:
     try:
         sifre = int(input("Kart Şifresi : "))
@@ -22,6 +24,9 @@ while retry_count > 0:
         else:
             retry_count -= 1
             print(f"Hatalı Şifre. Kalan deneme hakkı: {retry_count}")
+            if retry_count == 0:
+                print("Kart şifresini 3 kez yanlış girdiniz. Program sonlandırılıyor.")
+                exit()  # Programı sonlandır
     except ValueError:
         print("Şifre sadece sayılardan oluşur!")
 
